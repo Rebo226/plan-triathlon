@@ -286,6 +286,7 @@ body.pwa .only-print{display:none!important}
   </div>
 
   <div class="row"><button class="btn" id="gen">Generuj plan →</button><span class="note" id="savedNote"></span></div>
+  <p class="note" id="appVer" style="margin-top:16px;text-align:center"></p>
 </section>
 
 <!-- PLAN -->
@@ -1059,6 +1060,7 @@ window.addEventListener('resize',()=>{if($('#t-druk').classList.contains('on'))r
 let DL=null;
 (async()=>{try{if(window.claude&&window.claude.use)DL=await window.claude.use('downloads')}catch(e){DL=null}})();
 function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',3500)}
+const APPV='13.11 c';
 function inClaude(){try{return !!(window.claude&&window.claude.use)||window.top!==window}catch(e){return true}}
 async function saveFile(name,data,mime){
   if(DL){try{await DL.save({filename:name,data});return 'ok'}catch(err){return err&&err.code==='declined'?'declined':'err:'+(err&&err.code)}}
@@ -1094,9 +1096,17 @@ $('#expBtn').onclick=async()=>{const r=await saveFile(`plan-triathlon-dane-${iso
 $('#impFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const o=JSON.parse(await f.text());if(!o||typeof o!=='object'||!('cBike' in o))throw 0;
   S=Object.assign({},DEF,o);norm();save();renderInputs();if(PLAN)regen();$('#bkNote').textContent='Wczytano dane ✓';toast('Wczytano dane')}catch(err){$('#bkNote').textContent='To nie jest plik z danymi planu.'}e.target.value=''};
 if(!inClaude())document.body.classList.add('pwa');
+try{$('#appVer').textContent='Wersja aplikacji: '+APPV}catch(e){}
 renderInputs();initStore();
 if(!inClaude()&&'serviceWorker' in navigator&&location.protocol==='https:'){
-  try{navigator.serviceWorker.register('sw.js').then(reg=>{reg.addEventListener('updatefound',()=>{const nw=reg.installing;nw&&nw.addEventListener('statechange',()=>{if(nw.state==='installed'&&navigator.serviceWorker.controller)toast('Pobrano nową wersję aplikacji – odśwież / uruchom ponownie')})})}).catch(()=>{})}catch(e){}
+  try{const had=!!navigator.serviceWorker.controller;let reloaded=false;
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!reloaded){reloaded=true;try{sessionStorage.setItem('tri-upd','1')}catch(e){}location.reload()}});
+    navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(reg=>{
+      const chk=()=>reg.update().catch(()=>{});chk();
+      document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')chk()});
+      setInterval(chk,30*60*1000)}).catch(()=>{});
+    try{if(sessionStorage.getItem('tri-upd')){sessionStorage.removeItem('tri-upd');setTimeout(()=>toast('Zaktualizowano aplikację ✓ ('+APPV+')'),300)}}catch(e){}
+  }catch(e){}
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 }
 </script>
