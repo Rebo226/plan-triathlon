@@ -117,7 +117,10 @@ table.z th{font:600 12px Barlow;color:var(--mut);text-transform:uppercase}
 .acts input,.acts select{width:auto;flex:1 1 120px}
 .rrow{display:grid;grid-template-columns:1.3fr 1fr 1.2fr .7fr .9fr auto;gap:6px;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line)}
 .rrow button.del{border:0;background:none;font-size:20px;color:var(--mut);cursor:pointer;padding:4px 8px}
-@media (max-width:720px){.rrow{grid-template-columns:1fr 1fr}.rrow input[data-rf=name]{grid-column:1/3}}
+@media (max-width:720px){.rrow{grid-template-columns:1fr 1fr 40px;grid-template-areas:"n n x" "d t t" "p g g";padding:10px 0}
+  .rrow .rn{grid-area:n}.rrow .rd{grid-area:d}.rrow .rt{grid-area:t}.rrow .rp{grid-area:p}.rrow .rg{grid-area:g}.rrow .del{grid-area:x}}
+.rrow input[type=date]{min-width:0}
+body.pwa .only-print{display:none!important}
 .phasebar div{position:relative;min-width:0;overflow:hidden;font-size:10px}
 .phasebar div.hasrace{box-shadow:inset 0 -4px 0 #c81e4a}
 .rmk{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
@@ -177,7 +180,7 @@ table.z th{font:600 12px Barlow;color:var(--mut);text-transform:uppercase}
     <button data-t="plan">Plan</button>
     <button data-t="prog">Postęp</button>
     <button data-t="lib">Ćwiczenia</button>
-    <button data-t="druk">A4 / PDF</button>
+    <button data-t="druk" class="only-print">A4 / PDF</button>
   </nav>
 </header>
 <main>
@@ -186,7 +189,7 @@ table.z th{font:600 12px Barlow;color:var(--mut);text-transform:uppercase}
   <div class="card">
     <h2><i style="background:var(--race)"></i>Cel i termin</h2>
     <div class="grid">
-      <label class="f">Imię (na wydruk)<input id="name" placeholder="np. Robert"></label>
+      <label class="f only-print">Imię (na wydruk)<input id="name" placeholder="np. Robert"></label>
       <label class="f">Start planu<input type="date" id="start"></label>
       <label class="f">Liczba tygodni<small>tylko gdy brak startów</small><input type="number" id="weeksManual" min="4" max="52"></label>
       <label class="f">Dystans tri<small>gdy brak startu triathlonowego</small><select id="dist">
@@ -705,11 +708,11 @@ function renderInputs(){
 }
 function renderRaces(){
   const ty=Object.entries(RT).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join('');
-  $('#raceList').innerHTML=S.races.length?S.races.map((r,i)=>`<div class="rrow"><input data-ri="${i}" data-rf="name" placeholder="Nazwa (np. Susz)" value="${esc(r.name)}">
-    <input type="date" data-ri="${i}" data-rf="date" value="${esc(r.date)}">
-    <select data-ri="${i}" data-rf="type">${ty.replace(`value="${r.type}"`,`value="${r.type}" selected`)}</select>
-    <select data-ri="${i}" data-rf="prio">${['A','B','C'].map(x=>`<option${x===r.prio?' selected':''}>${x}</option>`).join('')}</select>
-    <input data-ri="${i}" data-rf="goal" placeholder="Cel h:mm:ss" value="${esc(r.goal||'')}">
+  $('#raceList').innerHTML=S.races.length?S.races.map((r,i)=>`<div class="rrow"><input class="rn" data-ri="${i}" data-rf="name" placeholder="Nazwa (np. Susz)" value="${esc(r.name)}">
+    <input class="rd" type="date" data-ri="${i}" data-rf="date" value="${esc(r.date)}">
+    <select class="rt" data-ri="${i}" data-rf="type">${ty.replace(`value="${r.type}"`,`value="${r.type}" selected`)}</select>
+    <select class="rp" data-ri="${i}" data-rf="prio">${['A','B','C'].map(x=>`<option${x===r.prio?' selected':''}>${x}</option>`).join('')}</select>
+    <input class="rg" data-ri="${i}" data-rf="goal" placeholder="Cel h:mm:ss" value="${esc(r.goal||'')}">
     <button class="del" data-rdel="${i}" title="Usuń">×</button></div>`).join(''):'<p class="note">Brak startów – plan będzie miał tyle tygodni, ile wpiszesz niżej.</p>';
 }
 function validate(){
@@ -1090,6 +1093,7 @@ $('#expBtn').onclick=async()=>{const r=await saveFile(`plan-triathlon-dane-${iso
   $('#bkNote').textContent=r==='ok'?'Zapisano kopię ✓':r==='declined'?'Anulowano.':'Nie udało się zapisać ('+r.slice(4)+').'};
 $('#impFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const o=JSON.parse(await f.text());if(!o||typeof o!=='object'||!('cBike' in o))throw 0;
   S=Object.assign({},DEF,o);norm();save();renderInputs();if(PLAN)regen();$('#bkNote').textContent='Wczytano dane ✓';toast('Wczytano dane')}catch(err){$('#bkNote').textContent='To nie jest plik z danymi planu.'}e.target.value=''};
+if(!inClaude())document.body.classList.add('pwa');
 renderInputs();initStore();
 if(!inClaude()&&'serviceWorker' in navigator&&location.protocol==='https:'){
   try{navigator.serviceWorker.register('sw.js').then(reg=>{reg.addEventListener('updatefound',()=>{const nw=reg.installing;nw&&nw.addEventListener('statechange',()=>{if(nw.state==='installed'&&navigator.serviceWorker.controller)toast('Pobrano nową wersję aplikacji – odśwież / uruchom ponownie')})})}).catch(()=>{})}catch(e){}
