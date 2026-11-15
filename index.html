@@ -216,15 +216,21 @@ body.pwa .only-print{display:none!important}
   </div>
 
   <div class="card">
+    <h2><i style="background:var(--ink)"></i>Kto prowadzi treningi</h2>
+    <div id="modesBox"></div>
+    <p class="note">„Do dnia” – po tej dacie dyscyplinę przejmuje plan aplikacji (np. gdy skończysz plan w Garmin Coach). Puste = cały plan bez zmian.</p>
+  </div>
+
+  <div class="card">
     <h2><i style="background:var(--ink)"></i>Treningi w tygodniu</h2>
     <div id="counts"></div>
     <p class="note" id="ovrInfo"></p>
-    <p class="note">Bieg nie jest rozpisywany – zaznacz tylko, w które dni Garmin Coach ma u Ciebie bieganie, żeby plan ułożył resztę wokół nich.</p>
+    <p class="note">Dni biegowe wybierasz niżej – przy biegu z Garmin Coach zaznacz dni, w które Coach ma bieganie.</p>
   </div>
 
   <div class="card">
     <h2><i style="background:var(--run)"></i>Dni tygodnia</h2>
-    <label class="f">Dni biegowe (Garmin Coach)</label>
+    <label class="f">Dni biegowe</label>
     <div class="seg" id="runDays" style="margin:4px 0 10px"></div>
     <div class="grid">
       <label class="f">Długi bieg<select id="longRun"></select></label>
@@ -325,12 +331,12 @@ const DAYSF=['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Ni
 const COL={swim:'#1c6dd0',bike:'#e0611a',run:'#2c9a4a',str:'#7a45d6',mob:'#0f8a8a',race:'#c81e4a',pre:'#c81e4a'};
 const DNAME={swim:'Pływanie',bike:'Rower',run:'Bieg',str:'Siła',mob:'Mobilność',race:'Zawody',pre:'Rozruch'};
 const DIST={
-  sprint:{n:'Sprint',swim:750,longPeak:90,midPeak:60,swimPeak:2000,raceBlk:8,raceRest:3,racePct:[95,102],raceHr:[97,102]},
-  eighth:{n:'1/8 IM',swim:475,longPeak:95,midPeak:60,swimPeak:1900,raceBlk:8,raceRest:3,racePct:[93,100],raceHr:[96,101]},
-  quarter:{n:'1/4 IM',swim:950,longPeak:150,midPeak:75,swimPeak:2500,raceBlk:15,raceRest:4,racePct:[85,92],raceHr:[91,95]},
-  oly:{n:'Olimpijski',swim:1500,longPeak:135,midPeak:70,swimPeak:2600,raceBlk:12,raceRest:4,racePct:[88,95],raceHr:[93,97]},
-  half:{n:'1/2 IM',swim:1900,longPeak:210,midPeak:80,swimPeak:3000,raceBlk:20,raceRest:5,racePct:[78,85],raceHr:[88,92]},
-  full:{n:'IM',swim:3800,longPeak:300,midPeak:90,swimPeak:3600,raceBlk:30,raceRest:5,racePct:[70,76],raceHr:[84,88]}};
+  sprint:{n:'Sprint',runLong:60,runMid:45,runRace:1.02,swim:750,longPeak:90,midPeak:60,swimPeak:2000,raceBlk:8,raceRest:3,racePct:[95,102],raceHr:[97,102]},
+  eighth:{n:'1/8 IM',runLong:60,runMid:45,runRace:1.03,swim:475,longPeak:95,midPeak:60,swimPeak:1900,raceBlk:8,raceRest:3,racePct:[93,100],raceHr:[96,101]},
+  quarter:{n:'1/4 IM',runLong:95,runMid:55,runRace:1.07,swim:950,longPeak:150,midPeak:75,swimPeak:2500,raceBlk:15,raceRest:4,racePct:[85,92],raceHr:[91,95]},
+  oly:{n:'Olimpijski',runLong:85,runMid:50,runRace:1.05,swim:1500,longPeak:135,midPeak:70,swimPeak:2600,raceBlk:12,raceRest:4,racePct:[88,95],raceHr:[93,97]},
+  half:{n:'1/2 IM',runLong:120,runMid:60,runRace:1.1,swim:1900,longPeak:210,midPeak:80,swimPeak:3000,raceBlk:20,raceRest:5,racePct:[78,85],raceHr:[88,92]},
+  full:{n:'IM',runLong:160,runMid:65,runRace:1.18,swim:3800,longPeak:300,midPeak:90,swimPeak:3600,raceBlk:30,raceRest:5,racePct:[70,76],raceHr:[84,88]}};
 const LVL={beg:{n:'Początkujący',sw:.7,bk:.8},mid:{n:'Średniozaawansowany',sw:1,bk:1},adv:{n:'Zaawansowany',sw:1.2,bk:1.1}};
 const PHN={base:'Baza',build:'Budowanie',peak:'Szczyt',taper:'Taper'};
 const BZ={rec:{p:[45,55],h:[null,81],rpe:'1–2',n:'Z1 Regeneracja'},z2:{p:[65,75],h:[81,89],rpe:'3–4',n:'Z2 Wytrzymałość'},
@@ -344,12 +350,13 @@ function dm(d){return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth(
 const today=new Date();
 const nm=mondayOf(addDays(today,7));
 const DEF={name:'',start:iso(nm),races:[{name:'',date:iso(addDays(nm,16*7-1)),type:'oly',prio:'A'}],weeksManual:16,dist:'oly',lvl:'mid',rec:4,
-  cSwim:2,cBike:3,cStr:2,cMob:3,layout:'auto',dp:{swim:[],bike:[],str:[],mob:[]},ovr:{},runDays:[1,3,6],longRun:6,longRide:5,rest:0,maxWd:75,maxWe:180,
+  cSwim:2,cBike:3,cStr:2,cMob:3,layout:'auto',dp:{swim:[],bike:[],str:[],mob:[]},ovr:{},modes:{run:{m:'ext',until:''},bike:{m:'app',until:''},swim:{m:'easy',until:''}},runDays:[1,3,6],longRun:6,longRide:5,rest:0,maxWd:75,maxWe:180,
   mode:'power',ftp:200,lthr:160,weight:'',bikeType:'road',runRefDist:10,runRefTime:'',tests:[],log:{},t400:'8:00',t200:'3:45',pool:25,bands:true,bar:false,roller:false,notes:''};
 let S=Object.assign({},DEF);
 try{const s=localStorage.getItem('tri-plan-v1');if(s){const o=JSON.parse(s);S=Object.assign({},DEF,o);
   if(!o.races){S.races=o.race?[{name:'',date:o.race,type:o.dist||'oly',prio:'A'}]:[]}}}catch(e){}
-function norm(){S.races=JSON.parse(JSON.stringify(S.races||[]));S.dp=Object.assign({swim:[],bike:[],str:[],mob:[]},JSON.parse(JSON.stringify(S.dp||{})));S.ovr=Object.assign({},S.ovr||{});S.tests=JSON.parse(JSON.stringify(S.tests||[]));S.log=Object.assign({},S.log||{})}
+function norm(){S.races=JSON.parse(JSON.stringify(S.races||[]));S.dp=Object.assign({swim:[],bike:[],str:[],mob:[]},JSON.parse(JSON.stringify(S.dp||{})));S.ovr=Object.assign({},S.ovr||{});S.tests=JSON.parse(JSON.stringify(S.tests||[]));S.log=Object.assign({},S.log||{});
+  const md=S.modes||{};S.modes={run:Object.assign({m:'ext',until:''},md.run),bike:Object.assign({m:'app',until:''},md.bike),swim:Object.assign({m:'app',until:''},md.swim)}}
 norm();
 let ART=null,saveT=null;
 function setSave(t){const e=document.getElementById('savedNote');if(e)e.textContent=t;const f=document.getElementById('saveBadge');if(f)f.textContent=t}
@@ -431,7 +438,7 @@ function bike(type,dur,ph,wi){
         add(`${k} × ${blk} min`,'Tempo startowe, w pozycji startowej · przerwy 5 min Z2',bz('race'));
         if(rem>0)add(m(rem),'Reszta jazdy w Z2',bz('z2'));
         add(m(5),'Schłodzenie',bz('rec'));tot=15+k*blk+(k-1)*5+Math.max(0,rem)+5;
-        note='Brick: jeśli Garmin Coach ma bieg tego dnia lub dzień po – zrób 10–20 min biegu zaraz po rowerze.';}
+        note='Brick: jeśli tego dnia masz też bieg – zrób go zaraz po rowerze (zmiana butów jak w strefie zmian).';}
       break}
     case 'FTPTEST':name='Test FTP (20 min)';goal='Sprawdzenie formy. Nowe FTP = średnia moc z 20 min × 0,95.';
       add(m(15),'Rozgrzewka Z2, w tym 3 × 1 min kadencja 100+',bz('z2'));add(m(5),'Mocno, ale nie na maksa',bz('thr'));add(m(10),'Luźno',bz('rec'));
@@ -466,6 +473,10 @@ function swim(type,D){
       const n=D>=2400?12:D>=1800?10:8;seg(n,50,'Szybko, ale technicznie',`${sp(-6,-4)} · odp. 30 s`);
       seg(Math.max(2,Math.round((D-tot-200)/100)),100,'Ósemka (pull) jeśli masz, inaczej kraul spokojnie',`${sp(3,5)} · odp. 15 s`);
       seg(1,200,'Schłodzenie','luźno');break}
+    case 'EASY':{name='Rozpływanie';goal='Spokojne pływanie tlenowe – czucie wody i luźne barki.';
+      seg(1,300,'Luźno, dowolnie (kraul / grzbiet)','luźno');seg(4,50,'Ćwiczenia techniczne wg uznania','odp. 15 s');
+      const k=Math.max(1,Math.round((D-tot-200)/400));seg(k,400,'Spokojnie i równo, co 4. długość grzbiet lub klasyczny',`${sp(8,12)} · odp. 20–30 s`);
+      seg(1,200,'Luźno, dowolnie','luźno');break}
     case 'CSSTEST':name='Test CSS (400 m + 200 m)';goal='Sprawdzenie tempa progowego w wodzie.';
       seg(1,300,'Rozgrzewka: 100 kraul / 100 nogi / 100 ćwiczenia','luźno');seg(4,50,'Narastająco 1→4','odp. 15 s');seg(1,100,'Luźno','luźno');
       seg(1,400,'TEST 400 m – na maksa, ale równo. Zapisz czas!','maks.');seg(1,200,'Bardzo luźno + odpoczynek, razem 5–10 min','luźno');
@@ -580,6 +591,15 @@ function schedule(forceAuto){
       for(const s of out.mob)if(adj(s,d))sc+=2;if(sc<bs){bs=sc;best=d}}
     if(best<0)break;out.mob.push(best);load[best].push('mob');
   }
+  // biegi: dni wybrane przez Ciebie; długi bieg = slot 0, mocny bieg z dala od długich dni i mocnego roweru
+  const rd=S.runDays.slice();out.run=[];
+  if(rd.length){const first=rd.includes(S.longRun)?S.longRun:rd[rd.length-1];out.run.push(first);
+    const hb=out.bike.filter((d,i)=>i===1||i===3);
+    while(out.run.length<rd.length){const hard=out.run.length===1||out.run.length===3;let best=-1,bs=1e9;
+      const hs=d=>{let sc=0;if(adj(d,S.longRun))sc+=3;if(d===S.longRide||adj(d,S.longRide))sc+=2;if(hb.includes(d))sc+=3;hb.forEach(x=>{if(adj(x,d))sc+=1});return sc};
+      let bw=-1e9;for(const d of rd){if(out.run.includes(d))continue;const sc=hs(d);
+        if(hard?sc<bs:sc>bw){best=d;if(hard)bs=sc;else bw=sc}}
+      out.run.push(best);if(hard&&bs>=3)(out.runBad=out.runBad||[]).push(best)}}
   return out;
 }
 function bikeTypes(ph,rec,wi,last){
@@ -611,7 +631,42 @@ function blockPhases(L,first,longTaper){
   return out;
 }
 const HARD=['TEMPO','SST','THR','VO2','RACE'];
-function easyVer(x){if(x.disc==='bike')return bike('END',Math.min(x.dur,60),'base',{rec:true});
+const EXTOK=x=>x.ext;
+const MODEN={run:{ext:'Garmin Coach / własny',app:'Plan aplikacji'},bike:{ext:'Własny / zewnętrzny',app:'Plan aplikacji'},swim:{ext:'Własny',easy:'Tylko rozpływanie',app:'Plan aplikacji'}};
+function modeAt(k,dt){const o=S.modes[k];if(!o||o.m==='app')return 'app';if(!o.until)return o.m;return iso(dt)<=o.until?o.m:'app'}
+function extItem(disc,long){const t={run:[long?'Długi bieg':'Bieg',S.modes.run.m==='ext'?'wg Garmin Coach / własnego planu':''],bike:[long?'Długa jazda – własny trening':'Rower – własny trening','wg własnego planu / aplikacji trenażera'],swim:['Pływanie – własny trening','wg własnego planu']}[disc];
+  return {disc,code:'EXT',ext:true,name:t[0],sub:t[1],dur:0,steps:[],goal:'Trening prowadzisz sam – plan tylko rezerwuje na niego miejsce w tygodniu, żeby ułożyć resztę wokół. Możesz go odhaczyć jako zrobiony.'}}
+function thrPace(){const v=cv().run;if(!v)return 330;const d=v.d*Math.pow(3600/v.t,1/1.06);return 3600/d}
+function racePaceRun(){const T=thrPace(),nx=races().find(r=>r.prio==='A'&&r.d>=sod(new Date()));
+  if(nx&&RUNKM[nx.type]&&cv().run){const v=cv().run;return riegel(v.t,v.d,RUNKM[nx.type])/RUNKM[nx.type]}
+  return T*DIST[MD].runRace}
+function runW(type,dur,ph,rec){
+  const T=thrPace(),rp=(a,b)=>`${fmt(T*a)}–${fmt(T*b)}/km`,st=[],add=(a,b,c)=>st.push([a,b,c]),m=x=>x+' min';
+  const E=rp(1.2,1.32),RP=racePaceRun(),RPs=`${fmt(RP*.99)}–${fmt(RP*1.01)}/km`;let name,goal,note='',tot=dur;
+  if(!cv().run)note='Wpisz wynik biegowy w zakładce Dane – tempa liczę na razie z założenia 5:30/km na progu.';
+  switch(type){
+    case 'EASY':name='Bieg spokojny';goal='Baza tlenowa – swobodny oddech, możesz rozmawiać.';add(m(dur),'Spokojnie, równo',E);break;
+    case 'STRIDES':name='Bieg spokojny + przebieżki';goal='Baza tlenowa i lekkość kroku.';add(m(dur-6),'Spokojnie',E);add('6 × 20 s','Przebieżki – szybko i luźno, 60 s marszu/truchtu przerwy','tempo ok. 5 km');tot=dur;break;
+    case 'LONG':
+      if(ph==='base'||rec){name='Długi bieg';goal='Wytrzymałość biegowa.';add(m(dur),'Spokojnie, równo. Pij co 20–30 min przy biegu >75 min',E)}
+      else{name='Długi bieg z tempem startowym';goal='Wytrzymałość + tempo startowe na zmęczeniu.';const f=ph==='peak'?Math.min(30,r5(dur*.3)):Math.min(20,r5(dur*.2));
+        add(m(dur-f),'Spokojnie',E);add(m(f),'Końcówka w tempie startowym',RPs)}break;
+    case 'TEMPO':{name='Tempo';goal='Wytrzymałość tempowa.';const b=dur>=55?15:10,r=2;add(m(15),'Rozgrzewka spokojnie',E);add(`${r} × ${b} min`,'Tempo, przerwa 3 min truchtu',rp(1.06,1.1));
+      const c=Math.max(5,dur-15-r*b-3);add(m(c),'Schłodzenie truchtem',E);tot=15+r*b+3+c;break}
+    case 'THR':{name='Próg';goal='Podnoszenie tempa progowego.';const r=clamp(Math.floor((dur-25+2)/8),3,5);add(m(15),'Rozgrzewka + 4 przebieżki',E);
+      add(`${r} × 6 min`,'Próg, równo – przerwa 2 min truchtu',rp(.98,1.02));add(m(10),'Schłodzenie',E);tot=25+r*8-2;break}
+    case 'VO2':{name='Interwały VO2max';goal='Pułap tlenowy i szybkość.';const r=clamp(Math.floor((dur-25+2)/5),4,6);add(m(15),'Rozgrzewka + 4 przebieżki',E);
+      add(`${r} × 3 min`,'Mocno – przerwa 2 min truchtu',rp(.92,.95));add(m(10),'Schłodzenie',E);tot=25+r*5-2;break}
+    case 'RACE':{name='Tempo startowe';goal='Oswojenie tempa startowego.';const b=DIST[MD].raceBlk>=20?15:10,r=dur>=55?3:2;add(m(15),'Rozgrzewka',E);
+      add(`${r} × ${b} min`,'Tempo startowe – przerwa 3 min truchtu',RPs);add(m(10),'Schłodzenie',E);tot=25+r*b+(r-1)*3;break}
+    case 'SHAKE':name='Rozruch biegowy';goal='Lekko – tylko „obudzić” nogi.';add(m(15),'Bardzo spokojnie',E);add('3 × 20 s','Przebieżki, pełny odpoczynek','luźno, szybko');tot=20;break;
+  }
+  return {disc:'run',code:type,name,dur:tot,steps:st,goal,note};
+}
+function runTypes(ph,rec,last){if(rec)return['LONG','STRIDES','EASY','EASY','EASY'];
+  return{base:['LONG','STRIDES','EASY','TEMPO','EASY'],build:['LONG','THR','EASY','VO2','STRIDES'],peak:['LONG','RACE','EASY','VO2','STRIDES'],taper:last?['EASY','RACE','STRIDES','EASY','EASY']:['LONG','RACE','STRIDES','EASY','EASY']}[ph]}
+function easyVer(x){if(x.ext)return {...x};if(x.disc==='run')return x.ext?{...x}:runW('EASY',Math.min(x.dur,40),'base',true);
+  if(x.disc==='bike')return bike('END',Math.min(x.dur,60),'base',{rec:true});
   if(x.disc==='swim')return swim('TECH',Math.min(x.dist,2000));if(x.disc==='str')return strength(x.code,'base',true,true);return {...x}}
 function buildPlan(){
   MD=mainDist();
@@ -635,37 +690,47 @@ function buildPlan(){
     const midD=clamp(r5(D.midPeak*L.bk*(.75+.25*w.p)*(w.rec||w.ph==='taper'?.8:1)),40,+S.maxWd||75);
     const swD=Math.max(1000,Math.round(D.swimPeak*L.sw*(.55+.45*w.p)/50)*50);
     w.midD=midD;
-    S.runDays.forEach(d=>w.days[d].push({disc:'run',name:d===S.longRun?'Długi bieg':'Bieg',sub:'wg Garmin Coach'}));
-    sch.bike.forEach((d,k)=>{const t=tw&&k===bTest?'FTPTEST':(bt[k]||'END');w.days[d].push(bike(t,k===0&&t!=='OPEN'?longD:midD,w.ph,w))});
-    sch.swim.forEach((d,k)=>w.days[d].push(swim(tw&&k===0?'CSSTEST':(st[k]||'TECH'),k===0||w.ph==='taper'?swD:Math.round(swD*.9/50)*50)));
+    const at=d=>addDays(w.date,d),rt=runTypes(w.ph,w.rec,w.tlast);
+    const RL=Math.max(D.runLong,...A.filter(r=>RUNKM[r.type]).map(r=>({r5:60,r10:75,r21:120,r42:160})[r.type]));
+    const longR=clamp(r5(RL*L.bk*w.p),35,180),midR=clamp(r5(D.runMid*L.bk*(.75+.25*w.p)*(w.rec||w.ph==='taper'?.8:1)),30,70);
+    sch.run.forEach((d,k)=>{if(modeAt('run',at(d))!=='app'){w.days[d].push(extItem('run',d===S.longRun));return}
+      let t=rt[k]||'EASY';if(((sch.runBad||[]).includes(d)||k===3&&sch.run.length<5)&&['TEMPO','THR','VO2','RACE'].includes(t))t='STRIDES';w.days[d].push(runW(t,k===0&&t==='LONG'?longR:midR,w.ph,w.rec))});
+    sch.bike.forEach((d,k)=>{if(modeAt('bike',at(d))!=='app'){w.days[d].push(extItem('bike',k===0));return}
+      const t=tw&&k===bTest?'FTPTEST':(bt[k]||'END');w.days[d].push(bike(t,k===0&&t!=='OPEN'?longD:midD,w.ph,w))});
+    sch.swim.forEach((d,k)=>{const sm2=modeAt('swim',at(d));if(sm2==='ext'){w.days[d].push(extItem('swim'));return}
+      const D2=k===0||w.ph==='taper'?swD:Math.round(swD*.9/50)*50;
+      w.days[d].push(sm2==='easy'?swim('EASY',Math.round(D2*.85/50)*50):swim(tw&&k===0?'CSSTEST':(st[k]||'TECH'),D2))});
     sch.str.forEach((d,k)=>{if(w.tlast&&k>0)return;w.days[d].push(strength(['A','B','C'][k%3],w.ph,w.rec,w.tlast))});
     const mo=mobOrder(sch.mob.length);sch.mob.forEach((d,k)=>w.days[d].push(mob(mo[k])));
   });
   // --- starty ---
   const N=W*7,get=i=>i>=0&&i<N?wk[Math.floor(i/7)].days[i%7]:null,set=(i,a)=>{if(i>=0&&i<N)wk[Math.floor(i/7)].days[i%7]=a};
   const soften=i=>{const a=get(i);if(!a)return;set(i,a.filter(x=>x.disc!=='str').map(x=>{
+    if(x.ext)return x;
+    if(x.disc==='run'&&['THR','VO2','RACE','TEMPO'].includes(x.code)||x.disc==='run'&&x.code==='LONG'&&x.dur>60)return runW('EASY',Math.min(x.dur,40),'base',true);
     if(x.disc==='bike'&&(HARD.includes(x.code)||x.code==='LONG'&&x.dur>90))return bike('END',Math.min(x.dur,60),'base',{rec:true});
     if(x.disc==='swim'&&['CSS','SPEED','RACE'].includes(x.code))return swim('TECH',Math.min(x.dist,2000));return x}))};
   const easyOnly=i=>{const a=get(i);if(!a)return;set(i,a.filter(x=>x.disc==='mob'||x.disc==='run'||x.disc==='race'||(x.disc==='swim'))
-    .map(x=>x.disc==='swim'?swim('TECH',Math.min(x.dist,1500)):x))};
+    .map(x=>x.ext?x:x.disc==='swim'?swim('TECH',Math.min(x.dist,1500)):x.disc==='run'?runW('EASY',Math.min(x.dur,30),'base',true):x))};
   rs.forEach(r=>{CUR=valsAt(r.d);
     const i=r.wi*7+r.wd,tri=RT[r.type]&&RT[r.type].tri,nm=r.name||RT[r.type].n;
     const goal=tri?'Rozgrzewka: 10 min rower lekko z 3 przyspieszeniami, 5–10 min pływania z kilkoma szybszymi odcinkami. Jedz i pij wg planu z długich jazd.'
-      :'Bieg – rozgrzewka i tempo wg Garmin Coach (dodaj ten start w Garmin Connect jako wydarzenie, żeby Coach zrobił taper biegowy).';
+      :(modeAt('run',r.d)==='app'?'Bieg – 15 min rozgrzewki z 3–4 przebieżkami. Zacznij równo, przyspiesz w drugiej połowie.':'Bieg – rozgrzewka i tempo wg Garmin Coach (dodaj ten start w Garmin Connect jako wydarzenie, żeby Coach zrobił taper biegowy).');
     set(i,[{disc:'race',name:nm,sub:RT[r.type].n+' · start '+r.prio,race:r,dur:0,steps:[],goal}]);
     if(r.prio==='C'){soften(i-1);soften(i+1);return}
     const pre=tri?{disc:'pre',name:'Rozruch przedstartowy',dur:30,goal:'Krótko i lekko – tylko „obudzić” mięśnie.',note:'Sprawdź sprzęt, odbierz pakiet, połóż się wcześnie.',
         steps:[['10 min','Rower Z2',bz('z2')],['3 × 30 s','Rower tempo startowe, przerwy 1 min',bz('race')],['5 min','Rower luźno',bz('rec')],['10 min','Pływanie luźno + 4 × 25 m szybciej','opcjonalnie']]}
       :{disc:'pre',name:'Dzień przed biegiem',dur:20,goal:'Nogi mają być świeże – bez roweru na mocy i bez siły.',note:'Bieg (lub wolne) wg Garmin Coach.',
         steps:[['0–20 min','Rower bardzo lekko albo wolne',bz('rec')],['10 min','Lekka mobilność bioder i łydek','']]};
-    const a=get(i-1);if(a&&!(a[0]&&a[0].disc==='race'))set(i-1,[pre,...a.filter(x=>x.disc==='mob'||x.disc==='run')]);
+    if(!tri&&modeAt('run',r.d)==='app')pre.note='Jeśli biegasz dzień przed: 15 min truchtu + 3 przebieżki.';
+    const a=get(i-1);if(a&&!(a[0]&&a[0].disc==='race'))set(i-1,[pre,...a.filter(x=>x.disc==='mob'||x.disc==='run').map(x=>x.disc==='run'&&!x.ext?runW('SHAKE',20,'base',true):x)]);
     soften(i-2);if(r.prio==='A'){soften(i-3);const b=get(i-4);if(b)set(i-4,b.filter(x=>x.disc!=='str'))}
     easyOnly(i+1);if(r.prio==='A'||['half','full','r21','r42'].includes(r.type)){soften(i+2);soften(i+3)}
   });
   // --- ręczne zmiany (zapisane po dacie, przetrwają przeliczenie planu)
   const ovr=S.ovr||{},moved=[];
   for(let i=0;i<N;i++){const w=wk[Math.floor(i/7)],d=i%7,date=iso(addDays(w.date,d)),c={};CUR=valsAt(w.date);
-    w.days[d]=w.days[d].flatMap(x=>{if(x.disc==='run'||x.disc==='race')return[x];
+    w.days[d]=w.days[d].flatMap(x=>{if(x.disc==='race'||x.disc==='pre'||!x.code)return[x];
       c[x.disc]=(c[x.disc]||0)+1;const key=`${date}|${x.disc}|${c[x.disc]}`;x.key=key;const o=ovr[key];if(!o)return[x];
       if(o.a==='skip'){x.skipped=true;x.ovr='skip';return[x]}
       if(o.a==='easy'){const y=easyVer(x);y.key=key;y.ovr='easy';return[y]}
@@ -675,7 +740,7 @@ function buildPlan(){
   moved.forEach(([x,to])=>{const i=Math.round((new Date(to+'T12:00')-base0)/864e5);const a=get(i);if(a)a.push(x)});
   wk.forEach(w=>{
     const ord={race:0,pre:0,run:1,swim:2,bike:3,str:4,mob:5};w.days.forEach(a=>a.sort((x,y)=>ord[x.disc]-ord[y.disc]));
-    const all=w.days.flat().filter(x=>!x.skipped);w.bike=all.filter(x=>x.disc==='bike').reduce((s,x)=>s+x.dur,0);
+    const all=w.days.flat().filter(x=>!x.skipped);w.run=all.filter(x=>x.disc==='run').reduce((s,x)=>s+(x.dur||0),0);w.bike=all.filter(x=>x.disc==='bike').reduce((s,x)=>s+x.dur,0);
     w.swim=all.filter(x=>x.disc==='swim').reduce((s,x)=>s+x.dist,0);
     w.other=all.filter(x=>x.disc==='str'||x.disc==='mob').reduce((s,x)=>s+x.dur,0);
   });
@@ -698,8 +763,13 @@ function renderCounts(){
     <p class="note">Stuknij kratkę, żeby dodać lub usunąć trening. „D” = długi bieg / długa jazda. Plan sam rozdzieli, który dzień jest mocny, a który lekki (mocne rowery z dala od długich dni).</p>`;
   $('#counts').innerHTML=x;
 }
+function renderModes(){
+  $('#modesBox').innerHTML=[['run','Bieg'],['bike','Rower'],['swim','Pływanie']].map(([k,n])=>{const o=S.modes[k];
+    return `<div class="cnt"><b><span class="dot" style="background:${COL[k]}"></span>${n}</b><div><div class="seg">${Object.entries(MODEN[k]).map(([m,l])=>`<button data-mk="${k}" data-mv="${m}" class="${o.m===m?'on':''}">${l}</button>`).join('')}</div>
+      ${o.m!=='app'?`<label class="f" style="margin-top:6px;flex-direction:row;align-items:center;gap:8px">do dnia <input type="date" data-mu="${k}" value="${esc(o.until||'')}" style="width:auto;flex:1"></label>`:''}</div></div>`}).join('');
+}
 function renderInputs(){
-  renderCounts();
+  renderCounts();renderModes();
   $('#runDays').innerHTML=DAYS.map((d,i)=>`<button data-d="${i}" class="${S.runDays.includes(i)?'on':''}">${d}</button>`).join('');
   const opt=(sel,none)=>(none?`<option value="-1"${sel===-1?' selected':''}>Brak</option>`:'')+DAYSF.map((d,i)=>`<option value="${i}"${sel===i?' selected':''}>${d}</option>`).join('');
   $('#longRun').innerHTML=opt(S.longRun,true);$('#longRide').innerHTML=opt(S.longRide);$('#rest').innerHTML=opt(S.rest,true);
@@ -737,6 +807,7 @@ function validate(){
 }
 function $(s){return document.querySelector(s)}
 document.addEventListener('click',e=>{
+  const mk=e.target.closest('[data-mk]');if(mk){S.modes[mk.dataset.mk].m=mk.dataset.mv;save();renderModes();return}
   const ly=e.target.closest('[data-lay]');if(ly){if(ly.dataset.lay==='manual'&&S.layout!=='manual'){const s=schedule(true);S.dp={swim:s.swim.slice(),bike:s.bike.slice(),str:s.str.slice(),mob:s.mob.slice()}}
     S.layout=ly.dataset.lay;save();renderInputs();return}
   const dc=e.target.closest('button[data-dk]');if(dc){const k=dc.dataset.dk,d=+dc.dataset.dd,a=S.dp[k];S.dp[k]=a.includes(d)?a.filter(x=>x!==d):[...a,d].sort();save();renderCounts();validate();return}
@@ -752,6 +823,7 @@ document.addEventListener('click',e=>{
   if(e.target.id==='modal'||e.target.closest('[data-close]'))$('#modal').classList.remove('on');
 });
 document.addEventListener('input',e=>{
+  if(e.target.dataset.mu){S.modes[e.target.dataset.mu].until=e.target.value;save();return}
   if(e.target.dataset.rf){S.races[+e.target.dataset.ri][e.target.dataset.rf]=e.target.value;save();validate();return}
   const id=e.target.id;if(!(id in DEF))return;
   const num=['weeksManual','rec','maxWd','maxWe','ftp','lthr','pool','longRun','longRide','rest','runRefDist'];
@@ -775,24 +847,28 @@ function zonesHTML(){
   const bk=Object.entries(BZ).filter(([k])=>k!=='open').map(([k,v])=>`<tr><td>${v.n}</td><td>${bz(k)}</td></tr>`).join('')+`<tr><td>Tempo startowe (${DIST[MD].n})</td><td>${bz('race')}</td></tr>`;
   const c=css();
   const sw=[['Szybkość',-6,-4],['CSS (próg)',0,1],['Tempo startowe',2,4],['Wytrzymałość',4,6],['Technika / spokojnie',6,8]].map(([n,a,b])=>`<tr><td>${n}</td><td>${fmt(c+a)}–${fmt(c+b)}/100 m</td></tr>`).join('');
-  return {bk,sw};
+  const T=thrPace(),R=racePaceRun();
+  const rn=[['Spokojnie / długi',1.2,1.32],['Tempo',1.06,1.1],['Próg',.98,1.02],['VO2max',.92,.95]].map(([n,a,b])=>`<tr><td>${n}</td><td>${fmt(T*a)}–${fmt(T*b)}/km</td></tr>`).join('')+`<tr><td>Tempo startowe</td><td>${fmt(R)}/km</td></tr>`;
+  return {bk,sw,rn};
 }
 function renderPlan(){
   const P=PLAN,D=DIST[MD],sm=P.wk[0].date;
   $('#planHead').innerHTML=`<h2><i style="background:var(--race)"></i>${P.W} tygodni · ${D.n} · ${LVL[S.lvl].n}</h2>
-    <div class="note" style="margin:0">${dm(sm)} – ${dm(addDays(sm,P.W*7-1))} · tygodniowo: ${P.sch.swim.length}× pływanie, ${P.sch.bike.length}× rower, ${P.sch.str.length}× siła, ${P.sch.mob.length}× mobilność + ${S.runDays.length}× bieg (Garmin)</div>${phaseBar()}`;
+    <div class="note" style="margin:0">${dm(sm)} – ${dm(addDays(sm,P.W*7-1))} · tygodniowo: ${P.sch.swim.length}× pływanie, ${P.sch.bike.length}× rower, ${P.sch.str.length}× siła, ${P.sch.mob.length}× mobilność + ${S.runDays.length}× bieg</div>
+    <div class="note" style="margin:4px 0 0">${[['run','Bieg'],['bike','Rower'],['swim','Pływanie']].map(([k,n])=>{const o=S.modes[k];return `${n}: <b>${MODEN[k][o.m]}</b>${o.m!=='app'&&o.until?' do '+o.until.split('-').reverse().join('.')+', potem plan aplikacji':''}`}).join(' · ')}</div>${phaseBar()}`;
   const z=zonesHTML();
   $('#zones').innerHTML=`<h2><i style="background:var(--bike)"></i>Twoje strefy</h2><div class="two" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
     <table class="z"><tr><th>Rower</th><th>${S.mode==='power'?'Moc':'Tętno'}</th></tr>${z.bk}</table>
-    <table class="z"><tr><th>Pływanie</th><th>Tempo</th></tr>${z.sw}</table></div>`;
+    <table class="z"><tr><th>Pływanie</th><th>Tempo</th></tr>${z.sw}</table>
+    ${S.modes.run.m!=='ext'||S.modes.run.until?`<table class="z"><tr><th>Bieg</th><th>Tempo</th></tr>${z.rn}</table>`:''}</div>`;
   const now=mondayOf(today);
   let open=OPENW!=null?OPENW:P.wk.findIndex(w=>w.date>=now);if(open<0)open=0;
   $('#weeks').innerHTML=P.wk.map(w=>`<details class="week"${w.i===open?' open':''}><summary>
-    <div class="wk-n">${w.i+1}</div><div class="wk-t"><b>${w.post?'Regeneracja':PHN[w.ph]}${w.post?' po starcie':w.rec?' · lżejszy':''}${w.races?' · 🏁 '+w.races.map(r=>esc(r.name||RT[r.type].n)).join(', '):''}</b><div>${dm(w.date)}–${dm(addDays(w.date,6))} · rower ${hm(w.bike)} · pływanie ${(w.swim/1000).toFixed(1)} km${(()=>{const c=weekDone(w);return c.p?` · zrobione ${c.d}/${c.p}`:''})()}${w.test?' · 🧪 testy':''}</div></div>
+    <div class="wk-n">${w.i+1}</div><div class="wk-t"><b>${w.post?'Regeneracja':PHN[w.ph]}${w.post?' po starcie':w.rec?' · lżejszy':''}${w.races?' · 🏁 '+w.races.map(r=>esc(r.name||RT[r.type].n)).join(', '):''}</b><div>${dm(w.date)}–${dm(addDays(w.date,6))}${w.run?` · bieg ${hm(w.run)}`:''} · rower ${hm(w.bike)} · pływanie ${(w.swim/1000).toFixed(1)} km${(()=>{const c=weekDone(w);return c.p?` · zrobione ${c.d}/${c.p}`:''})()}${w.test?' · 🧪 testy':''}</div></div>
     <span class="pill ph-${w.ph}">${PHN[w.ph]}</span></summary>
     <div class="days">${w.days.map((arr,d)=>`<div class="day${arr.length?'':' empty'}"><h4><button data-dayw="${w.i}" data-dayd="${d}">${DAYS[d]} ${dm(addDays(w.date,d))}</button></h4><div>${
-      arr.length?arr.map((x,k)=>x.disc==='run'?`<div class="ses run" style="border-color:${COL.run}"><b>${x.name}</b>${x.sub}</div>`:
-      `<button class="ses ${x.disc==='race'?'race':''}${x.skipped?' skip':''}${x.key&&S.log[x.key]&&S.log[x.key].done?' done':isMiss(x,addDays(w.date,d))?' miss':''}" style="border-color:${COL[x.disc]}" data-w="${w.i}" data-d="${d}" data-k="${k}"><b>${x.disc==='race'?x.name:DNAME[x.disc]}</b>${x.disc==='race'?x.sub:esc(x.name)}${x.dur?` · ${hm(x.dur)}`:''}${x.dist?` · ${x.dist} m`:''}${x.ovr==='easy'?'<span class="tag">lżej</span>':x.ovr==='move'?`<span class="tag">z ${DAYS[(new Date(x.movedFrom+'T12:00').getDay()+6)%7]}</span>`:x.ovr==='skip'?'<span class="tag">pominięty</span>':''}${x.key&&S.log[x.key]&&S.log[x.key].done?`<span class="tag ok">✓${S.log[x.key].feel?' '+FEEL[S.log[x.key].feel]:''}</span>`:''}${x.test?'<span class="tag" style="background:#c81e4a">TEST</span>':''}</button>`).join(''):'<span class="note">wolne</span>'}</div></div>`).join('')}</div></details>`).join('');
+      arr.length?arr.map((x,k)=>
+      `<button class="ses ${x.disc==='race'?'race':''}${x.skipped?' skip':''}${x.key&&S.log[x.key]&&S.log[x.key].done?' done':isMiss(x,addDays(w.date,d))?' miss':''}" style="border-color:${COL[x.disc]}" data-w="${w.i}" data-d="${d}" data-k="${k}"><b>${x.disc==='race'?x.name:DNAME[x.disc]}</b>${x.disc==='race'?x.sub:x.ext?esc(x.name)+(x.sub?` <span style="color:var(--mut)">· ${esc(x.sub)}</span>`:''):esc(x.name)}${x.dur?` · ${hm(x.dur)}`:''}${x.dist?` · ${x.dist} m`:''}${x.ovr==='easy'?'<span class="tag">lżej</span>':x.ovr==='move'?`<span class="tag">z ${DAYS[(new Date(x.movedFrom+'T12:00').getDay()+6)%7]}</span>`:x.ovr==='skip'?'<span class="tag">pominięty</span>':''}${x.key&&S.log[x.key]&&S.log[x.key].done?`<span class="tag ok">✓${S.log[x.key].feel?' '+FEEL[S.log[x.key].feel]:''}</span>`:''}${x.test?'<span class="tag" style="background:#c81e4a">TEST</span>':''}</button>`).join(''):'<span class="note">wolne</span>'}</div></div>`).join('')}</div></details>`).join('');
 }
 function openSes(wi,d,k){
   const w=PLAN.wk[wi],x=w.days[d][k];
@@ -855,11 +931,11 @@ function doAct(b){
 /* ---------- POSTĘP ---------- */
 const FEEL={easy:'🙂',ok:'😐',hard:'🥵'},FEELN={easy:'Łatwo',ok:'OK',hard:'Ciężko'};
 function sod(d){const x=new Date(d);x.setHours(0,0,0,0);return x}
-function isMiss(x,dt){return x.key&&!x.skipped&&!(S.log[x.key]&&S.log[x.key].done)&&sod(dt)<sod(new Date())}
-function weekDone(w){let p=0,d=0;w.days.forEach((a,i)=>{if(sod(addDays(w.date,i))>sod(new Date()))return;a.forEach(x=>{if(!x.key||x.skipped)return;p++;if(S.log[x.key]&&S.log[x.key].done)d++})});return{p,d}}
+function isMiss(x,dt){return x.key&&!x.skipped&&!x.ext&&!(S.log[x.key]&&S.log[x.key].done)&&sod(dt)<sod(new Date())}
+function weekDone(w){let p=0,d=0;w.days.forEach((a,i)=>{if(sod(addDays(w.date,i))>sod(new Date()))return;a.forEach(x=>{if(!x.key||x.skipped||(x.ext&&!(S.log[x.key]&&S.log[x.key].done)))return;p++;if(S.log[x.key]&&S.log[x.key].done)d++})});return{p,d}}
 function pastItems(days){const out=[],now=sod(new Date()),from=days?addDays(now,-days):null;
   PLAN.wk.forEach(w=>w.days.forEach((a,i)=>{const dt=sod(addDays(w.date,i));if(dt>now||(from&&dt<=from))return;
-    a.forEach(x=>{if(x.key&&!x.skipped)out.push({x,dt,done:!!(S.log[x.key]&&S.log[x.key].done),feel:S.log[x.key]&&S.log[x.key].feel})})}));return out}
+    a.forEach(x=>{if(x.key&&!x.skipped&&!(x.ext&&!(S.log[x.key]&&S.log[x.key].done)))out.push({x,dt,done:!!(S.log[x.key]&&S.log[x.key].done),feel:S.log[x.key]&&S.log[x.key].feel})})}));return out}
 const RD={sprint:[750,20,5],eighth:[475,22.5,5.3],oly:[1500,40,10],quarter:[950,45,10.5],half:[1900,90,21.1],full:[3800,180,42.2]};
 const RIF={sprint:.92,eighth:.9,oly:.86,quarter:.84,half:.78,full:.7},SWO={sprint:3,eighth:3,oly:5,quarter:5,half:7,full:9};
 const FADE={sprint:1.04,eighth:1.04,oly:1.06,quarter:1.07,half:1.1,full:1.18},TRT={sprint:210,eighth:210,oly:300,quarter:300,half:420,full:600};
@@ -928,7 +1004,7 @@ function renderProg(){
       ${sv?`<p class="note"><b>Co da najwięcej:</b> ${sv.map(([n,t])=>`${n} ≈ −${fmtT(t)}`).join(' · ')}</p>`:''}
     </div>`};
   const p14=pastItems(14),all=pastItems(0),rt=a=>a.length?Math.round(a.filter(z=>z.done).length/a.length*100):null;
-  const discs=['swim','bike','str','mob'];
+  const discs=['run','swim','bike','str','mob'];
   const wks=PLAN.wk.filter(w=>w.date<=now).slice(-8);
   const tests=(S.tests||[]).map((t,i)=>`<tr><td>${t.date.split('-').reverse().join('.')}</td><td>${[+t.ftp?'FTP '+t.ftp+' W':'',+t.lthr?'LTHR '+t.lthr:'',t.t400&&t.t200?'400 m '+t.t400+' / 200 m '+t.t200+' → CSS '+fmt(cssOf(t)):'',+t.weight?t.weight+' kg':'',t.runTime?'bieg '+(+t.runDist)+' km '+t.runTime:''].filter(Boolean).join(' · ')}</td><td><button class="btn alt" style="padding:2px 8px;font-size:13px" data-act="deltest" data-i="${i}">×</button></td></tr>`).join('');
   $('#progOut').innerHTML=`
@@ -979,7 +1055,7 @@ function renderLib(){
 
 /* ---------- PRINT PAGES ---------- */
 function sesPrint(x){
-  if(x.disc==='run')return `<div class="ps" style="border-color:${COL.run}"><div class="hd"><span>${x.name} <span style="font-weight:500;text-transform:none">– ${x.sub}</span></span><span class="bx"></span></div></div>`;
+  if(x.ext)return `<div class="ps" style="border-color:${COL[x.disc]}"><div class="hd"><span>${x.name} <span style="font-weight:500;text-transform:none">– ${x.sub}</span></span><span class="bx"></span></div></div>`;
   if(x.skipped)return `<div class="ps" style="border-color:#bbb;opacity:.5"><div class="hd"><span style="text-decoration:line-through">${esc(DNAME[x.disc]+': '+x.name)}</span><span>pominięty</span></div></div>`;
   const head=x.disc==='race'?x.name+' · '+x.sub:`${x.name.startsWith(DNAME[x.disc])?'':DNAME[x.disc]+': '}${x.name}${x.dur?' · '+hm(x.dur):''}${x.dist?' · '+x.dist+' m':''}`;
   return `<div class="ps" style="border-color:${COL[x.disc]}"><div class="hd"><span style="color:${COL[x.disc]}">${esc(head)}</span><span class="bx"></span></div>
@@ -1060,7 +1136,7 @@ window.addEventListener('resize',()=>{if($('#t-druk').classList.contains('on'))r
 let DL=null;
 (async()=>{try{if(window.claude&&window.claude.use)DL=await window.claude.use('downloads')}catch(e){DL=null}})();
 function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',3500)}
-const APPV='13.11 c';
+const APPV='15.11 a';
 function inClaude(){try{return !!(window.claude&&window.claude.use)||window.top!==window}catch(e){return true}}
 async function saveFile(name,data,mime){
   if(DL){try{await DL.save({filename:name,data});return 'ok'}catch(err){return err&&err.code==='declined'?'declined':'err:'+(err&&err.code)}}
